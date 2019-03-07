@@ -97,8 +97,8 @@ private:
             nsapi_size_or_error_t recv_ret;
             while ((recv_ret = socket->recv(recv_buffer, HTTP_RECEIVE_BUFFER_SIZE)) > 0) {
                 // Pass the chunk into the http_parser
-                size_t nparsed = parser->execute((const char*)recv_buffer, recv_ret);
-                if (nparsed != recv_ret) {
+                size_t nparsed = parser->execute((const char*)recv_buffer, (uint32_t) recv_ret);
+                if (nparsed != (uint32_t) recv_ret) {
                     printf("Parsing failed... parsed %d bytes, received %d bytes\n", nparsed, recv_ret);
                     recv_ret = -2101;
                     break;
