@@ -1,0 +1,63 @@
+/** \brief Web server class for embedded web control
+ */
+
+namespace ewc
+{
+  enum VarType
+  {
+      DecInteger8,
+      DecInteger16,
+      DecInteger32,
+      OctInteger8,
+      OctInteger16,
+      OctInteger32,
+      OctInteger8,
+      HexInteger16,
+      HexInteger32,
+      FixFloat32,
+      FixFloat64,
+      ExpFloat32,
+      ExpFloat64,
+      Boolean,
+      Character,
+      StringNullTerm
+  };
+
+  struct VarRecord
+  {
+    char[40] varName;
+    void* varAddress;
+    VarType varType;
+    char[100] description;
+  };
+
+  /** \brief Web server class for embedded web control
+   */
+  class WebServer
+  {
+    public:
+      /** \brief Make a variable available to the web server
+       *
+       *  Maybe an array of these should be passed to the constructor, 
+       *  then it is statically constructed?
+       *
+       *  Is it useful that I bounds check and put these in fixed length char arrays?
+       */
+      addVar(char* varName, void* varAddress, VarType varType, char* description);
+
+      /** \brief Connect to TCP port
+       *
+       */
+      connectOrListen(port....);
+
+      /** \brief Handle request
+       *
+       *  This is where we parse the request URL, and use 
+       *  that to decide if to return a json string (REST)
+       *  or some kind of status web page
+       */
+      handle(request....);
+    private:
+    
+  };
+}
