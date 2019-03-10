@@ -4,11 +4,16 @@
 #include "mbed.h"
 #include "http_server.h"
 #include "http_response_builder.h"
+#include <vector>
+
+#define VARNAMESIZE 40
+#define DESCRIPTIONSIZE 100
 
 namespace ewc
 {
   enum VarType
   {
+      Nothing,
       DecInteger8,
       DecInteger16,
       DecInteger32,
@@ -29,10 +34,50 @@ namespace ewc
 
   struct VarRecord
   {
-    char varName[40];
+    char varName[VARNAMESIZE];
     void* varAddress;
     VarType varType;
-    char description[100];
+    char description[DESCRIPTIONSIZE];
+
+    VarRecord(char* name, void* addr, VarType t, char* desc){
+      size_t nameLen = strlen(name);
+      size_t descLen = strlen(desc);
+      for(size_t i=0; i < nameLen && i < VARNAMESIZE; i++)
+      {
+        varName[i] = name[i];
+      }
+      for(size_t i=0; i < descLen && i < DESCRIPTIONSIZE; i++)
+      {
+        description[i] = desc[i];
+      }
+      varAddress = addr;
+      varType = t;
+    };
+  };
+
+  struct FuncRecord
+  {
+    char funcName[VARNAMESIZE];
+    void* funcAddress;
+    VarType returnType;
+    char description[DESCRIPTIONSIZE];
+    bool addToStatusList;
+
+    FuncRecord(char* name, void* addr, VarType t, char* desc, bool st){
+      size_t nameLen = strlen(name);
+      size_t descLen = strlen(desc);
+      for(size_t i=0; i < nameLen && i < VARNAMESIZE; i++)
+      {
+        funcName[i] = name[i];
+      }
+      for(size_t i=0; i < descLen && i < DESCRIPTIONSIZE; i++)
+      {
+        description[i] = desc[i];
+      }
+      funcAddress = addr;
+      returnType = t;
+      addToStatusList = st;
+    };
   };
 
   /** \brief Web server class for embedded web control
@@ -58,6 +103,15 @@ namespace ewc
        */
       void addVar(char* varName, void* varAddress, VarType varType, char* description);
 
+      /** \brief Make a variable available to the web server
+       *
+       *  Maybe an array of these should be passed to the constructor, 
+       *  then it is statically constructed?
+       *
+       *  Is it useful that I bounds check and put these in fixed length char arrays?
+       */
+      void addFunc(char* varName, void* funcAddress, VarType returnType, char* description, bool addToStatusList);
+
       /** \brief Start the server
  *
        *  Start the server and connect it to its own port
@@ -78,5 +132,9 @@ namespace ewc
       /////////////////////////////////
 
       HttpServer* _httpServer;
+
+      std::vector<VarRecord> _varRecords;
+      std::vector<FuncRecord> _funcRecords;
+    
   };
 }

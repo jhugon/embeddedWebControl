@@ -13,7 +13,16 @@ ewc::HttpControl::~HttpControl()
 
 void ewc::HttpControl::addVar(char* varName, void* varAddress, VarType varType, char* description)
 {
+    _varRecords.push_back(VarRecord(varName,varAddress,varType,description));
 } // addVar
+
+void ewc::HttpControl::addFunc(char* varName, void* funcAddress, VarType returnType, char* description, bool addToStatusList)
+{
+  size_t nameLen = strlen(varName);
+  size_t descLen = strlen(description);
+  if(nameLen <= VARNAMESIZE && descLen <= DESCRIPTIONSIZE)
+    _funcRecords.push_back(FuncRecord(varName,funcAddress,returnType,description,addToStatusList));
+} // addFunc
 
 nsapi_error_t ewc::HttpControl::start(uint16_t port)
 {
