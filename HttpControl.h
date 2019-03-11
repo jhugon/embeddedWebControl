@@ -32,51 +32,30 @@ namespace ewc
       StringNullTerm
   };
 
-  struct VarRecord
+  struct VarFuncRecord
   {
-    char varName[VARNAMESIZE];
-    void* varAddress;
+    char name[VARNAMESIZE];
+    void* address;
     VarType varType;
-    char description[DESCRIPTIONSIZE];
-
-    VarRecord(char* name, void* addr, VarType t, char* desc){
-      size_t nameLen = strlen(name);
-      size_t descLen = strlen(desc);
-      for(size_t i=0; i < nameLen && i < VARNAMESIZE; i++)
-      {
-        varName[i] = name[i];
-      }
-      for(size_t i=0; i < descLen && i < DESCRIPTIONSIZE; i++)
-      {
-        description[i] = desc[i];
-      }
-      varAddress = addr;
-      varType = t;
-    };
-  };
-
-  struct FuncRecord
-  {
-    char funcName[VARNAMESIZE];
-    void* funcAddress;
-    VarType returnType;
+    bool isFunction;
     char description[DESCRIPTIONSIZE];
     bool addToStatusList;
 
-    FuncRecord(char* name, void* addr, VarType t, char* desc, bool st){
-      size_t nameLen = strlen(name);
+    VarFuncRecord(char* nm, void* addr, VarType t, bool isf, char* desc, bool atsl){
+      size_t nameLen = strlen(nm);
       size_t descLen = strlen(desc);
       for(size_t i=0; i < nameLen && i < VARNAMESIZE; i++)
       {
-        funcName[i] = name[i];
+        name[i] = nm[i];
       }
       for(size_t i=0; i < descLen && i < DESCRIPTIONSIZE; i++)
       {
         description[i] = desc[i];
       }
-      funcAddress = addr;
-      returnType = t;
-      addToStatusList = st;
+      address = addr;
+      varType = t;
+      isFunction = isf;
+      addToStatusList = atsl;
     };
   };
 
@@ -94,26 +73,17 @@ namespace ewc
 
       ~HttpControl();
 
-      /** \brief Make a variable available to the web server
+      /** \brief Make a variable or function available to the web server
        *
        *  Maybe an array of these should be passed to the constructor, 
        *  then it is statically constructed?
        *
-       *  Is it useful that I bounds check and put these in fixed length char arrays?
+       *  Is it useful that I bounds check and put strings in fixed length char arrays?
        */
-      void addVar(char* varName, void* varAddress, VarType varType, char* description);
-
-      /** \brief Make a variable available to the web server
-       *
-       *  Maybe an array of these should be passed to the constructor, 
-       *  then it is statically constructed?
-       *
-       *  Is it useful that I bounds check and put these in fixed length char arrays?
-       */
-      void addFunc(char* varName, void* funcAddress, VarType returnType, char* description, bool addToStatusList);
+      void addVarFunc(char* name, void* address, VarType varType, bool isFunction, char* description, bool addToStatsList);
 
       /** \brief Start the server
- *
+       *
        *  Start the server and connect it to its own port
        *  this will start a new thread
        */
@@ -128,13 +98,26 @@ namespace ewc
        *  or some kind of status web page
        */
       void handle(ParsedHttpRequest* request, TCPSocket* socket);
-    
+
+      /** \brief Handle request for main page
+       *
+       *  This returns a webpage if the
+       *  the URL is "/"
+       */
+      void indexHtml(ParsedHttpRequest* request, TCPSocket* socket);
+
+      /** \brief Handle requests for variables/functions
+       *
+       *  This is the REST API for variables that is used if
+       *  the URL starts with "/vf/"
+       */
+      void varFuncInterface(ParsedHttpRequest* request, TCPSocket* socket);
+
       /////////////////////////////////
 
       HttpServer* _httpServer;
 
-      std::vector<VarRecord> _varRecords;
-      std::vector<FuncRecord> _funcRecords;
+      std::vector<VarFuncRecord> _varFuncRecords;
     
   };
 }
