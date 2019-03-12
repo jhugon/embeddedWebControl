@@ -24,7 +24,7 @@ nsapi_error_t ewc::HttpControl::start(uint16_t port)
 void ewc::HttpControl::handle(ParsedHttpRequest* request, TCPSocket* socket)
 {
     const std::string& url = request->get_url();
-    debug("ewc::HttpControl::handle called with url: %s",url.c_str());
+    debug("ewc::HttpControl::handle called with url: %s\n",url.c_str());
     if (url == "/")
     {
       indexHtml(request,socket);
@@ -41,7 +41,7 @@ void ewc::HttpControl::handle(ParsedHttpRequest* request, TCPSocket* socket)
 
 void ewc::HttpControl::indexHtml(ParsedHttpRequest* request, TCPSocket* socket)
 {
-    debug("ewc::HttpControl::indexHtml called");
+    debug("ewc::HttpControl::indexHtml called\n");
     const http_method & method = request->get_method();
     if (method == HTTP_GET)
     {
@@ -69,5 +69,5 @@ void ewc::HttpControl::indexHtml(ParsedHttpRequest* request, TCPSocket* socket)
 void ewc::HttpControl::varFuncInterface(ParsedHttpRequest* request, TCPSocket* socket)
 {
     const std::string& url = request->get_url();
-    debug("ewc::HttpControl::varFuncInterface called with url: %s",url.c_str());
+    debug("ewc::HttpControl::varFuncInterface called with url: %s\n",url.c_str());
 } // varFuncInterface
