@@ -55,7 +55,7 @@ public:
      * Start running the server (it will run on it's own thread)
      */
     nsapi_error_t start(uint16_t port, Callback<void(ParsedHttpRequest* request, TCPSocket* socket)> a_handler) {
-        server = new TCPServer();
+        server = new TCPSocket();
 
         nsapi_error_t ret;
 
@@ -148,11 +148,9 @@ private:
 
     void main() {
         while (1) {
-            TCPSocket* clt_sock = new TCPSocket(); // Q: when should these be cleared? When not connected anymore?
-            SocketAddress clt_addr;
-
-            nsapi_error_t accept_res = server->accept(clt_sock, &clt_addr);
-            if (accept_res == NSAPI_ERROR_OK) {
+            nsapi_error_t accept_status = 0;
+            TCPSocket* clt_sock = server->accept(&accept_status);
+            if (accept_status == NSAPI_ERROR_OK) {
                 sockets.push_back(clt_sock); // so we can clear our disconnected sockets
 
                 // and start listening for events there
@@ -185,7 +183,7 @@ private:
         Thread*    thread;
     } socket_thread_metadata_t;
 
-    TCPServer* server;
+    TCPSocket* server;
     NetworkInterface* _network;
     Thread main_thread;
     vector<TCPSocket*> sockets;
