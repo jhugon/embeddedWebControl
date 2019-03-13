@@ -43,7 +43,7 @@ int main() {
     } //switch
 
     ewc::HttpControl server(network);
-    server.addVarFunc("LED1",&led,ewc::DecInteger32,false,"Output Pin LED1",true);
+    server.addVar("LED1",&led,ewc::DecInteger32,"Output Pin LED1",true);
     nsapi_error_t res = server.start(8080);
 
     if (res == NSAPI_ERROR_OK) {

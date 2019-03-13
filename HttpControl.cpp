@@ -11,10 +11,10 @@ ewc::HttpControl::~HttpControl()
 } // HttpControl destructor
 
 
-void ewc::HttpControl::addVarFunc(char* name, void* address, VarType varType, bool isFunction, char* description, bool addToStatsList)
+void ewc::HttpControl::addVar(char* name, void* address, VarType varType, char* description, bool addToStatsList)
 {
-    _varFuncRecords.push_back(VarFuncRecord(name,address,varType,isFunction,description,addToStatsList));
-} // addVarFunc
+    _varRecords.push_back(VarRecord(name,address,varType,description,addToStatsList));
+} // addVar
 
 nsapi_error_t ewc::HttpControl::start(uint16_t port)
 {
@@ -29,10 +29,10 @@ void ewc::HttpControl::handle(ParsedHttpRequest* request, TCPSocket* socket)
     {
       indexHtml(request,socket);
     } // if url == /
-    else if (url.compare(0,4,"/vf/"))
+    else if (url.compare(0,5,"/var/"))
     {
-      varFuncInterface(request,socket);
-    } // if url starts with /vf/
+      varInterface(request,socket);
+    } // if url starts with /var/
     else {
         HttpResponseBuilder builder(404); // not found
         builder.send(socket, NULL, 0);
@@ -66,8 +66,34 @@ void ewc::HttpControl::indexHtml(ParsedHttpRequest* request, TCPSocket* socket)
     } // else method isn't GET
 } // indexHtml
 
-void ewc::HttpControl::varFuncInterface(ParsedHttpRequest* request, TCPSocket* socket)
+void ewc::HttpControl::varInterface(ParsedHttpRequest* request, TCPSocket* socket)
 {
     const std::string& url = request->get_url();
-    debug("ewc::HttpControl::varFuncInterface called with url: %s\n",url.c_str());
-} // varFuncInterface
+    debug("ewc::HttpControl::varInterface called with url: %s\n",url.c_str());
+    const std::string& varName = url.substr(5,VARNAMESIZE);
+    for(size_t iRec=0; iRec < _varRecords.size(); iRec++)
+    {
+      if (_varRecords[iRec].name == varName)
+      {
+        const http_method & method = request->get_method();
+        if (method == HTTP_GET)
+        {
+          char outVal[16];
+          _varRecords[iRec].toValString(outVal,16);
+          HttpResponseBuilder builder(200);
+          builder.set_header("Content-Type", "text/plain");
+          builder.send(socket, outVal, 16);
+        }
+        else if (method == HTTP_POST)
+        {
+          HttpResponseBuilder builder(405); // method not allowed
+          builder.send(socket, NULL, 0);
+        }
+        else
+        {
+          HttpResponseBuilder builder(405); // method not allowed
+          builder.send(socket, NULL, 0);
+        }
+      } // if name == varName
+    } // for iRec
+} // varInterface

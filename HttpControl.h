@@ -32,16 +32,15 @@ namespace ewc
       StringNullTerm
   };
 
-  struct VarFuncRecord
+  struct VarRecord
   {
     char name[VARNAMESIZE];
     void* address;
     VarType varType;
-    bool isFunction;
     char description[DESCRIPTIONSIZE];
     bool addToStatusList;
 
-    VarFuncRecord(char* nm, void* addr, VarType t, bool isf, char* desc, bool atsl){
+    VarRecord(char* nm, void* addr, VarType t, char* desc, bool atsl){
       size_t nameLen = strlen(nm);
       size_t descLen = strlen(desc);
       for(size_t i=0; i < nameLen && i < VARNAMESIZE; i++)
@@ -54,10 +53,56 @@ namespace ewc
       }
       address = addr;
       varType = t;
-      isFunction = isf;
       addToStatusList = atsl;
     };
-  };
+
+    void toValString(char* outStr, size_t strLen){
+      switch(varType)
+      {
+        case DecInteger8:
+          snprintf(outStr,strLen,"%hhd",*((int8_t*) address));
+          break;
+        case DecInteger16:
+          snprintf(outStr,strLen,"%hd",*((int16_t*) address));
+          break;
+        case DecInteger32:
+          snprintf(outStr,strLen,"%ld",*((int32_t*) address));
+          break;
+        default:
+          break;
+      }; // switch varType
+    }; // toValString
+    int fromValString(char* inStr){
+      bool isNullTerm=false;
+      for(size_t i=0; i<16; i++)
+      {
+        if (inStr[i] == '\0')
+        {
+          isNullTerm = true;
+          break;
+        } // if char is null
+      } // for i
+      if (!isNullTerm) // bad input could cause big issues!
+      {
+        debug("ewc::VarRecord::fromValString Error: string too long or not null terminated");
+        return -1;
+      } // if !isNullTerm
+      switch(varType)
+      {
+        case DecInteger8:
+          return sscanf(inStr,"%hhd",(int8_t*) address);
+          break;
+        case DecInteger16:
+          return sscanf(inStr,"%hd",(int16_t*) address);
+          break;
+        case DecInteger32:
+          return sscanf(inStr,"%ld",(int32_t*) address);
+          break;
+        default:
+          break;
+      }; // switch varType
+    }; // toValString
+  }; 
 
   /** \brief Web server class for embedded web control
    */
@@ -73,14 +118,14 @@ namespace ewc
 
       ~HttpControl();
 
-      /** \brief Make a variable or function available to the web server
+      /** \brief Make a variable available to the web server
        *
        *  Maybe an array of these should be passed to the constructor, 
        *  then it is statically constructed?
        *
        *  Is it useful that I bounds check and put strings in fixed length char arrays?
        */
-      void addVarFunc(char* name, void* address, VarType varType, bool isFunction, char* description, bool addToStatsList);
+      void addVar(char* name, void* address, VarType varType, char* description, bool addToStatsList);
 
       /** \brief Start the server
        *
@@ -106,18 +151,18 @@ namespace ewc
        */
       void indexHtml(ParsedHttpRequest* request, TCPSocket* socket);
 
-      /** \brief Handle requests for variables/functions
+      /** \brief Handle requests for variables
        *
        *  This is the REST API for variables that is used if
-       *  the URL starts with "/vf/"
+       *  the URL starts with "/var/"
        */
-      void varFuncInterface(ParsedHttpRequest* request, TCPSocket* socket);
+      void varInterface(ParsedHttpRequest* request, TCPSocket* socket);
 
       /////////////////////////////////
 
       HttpServer* _httpServer;
 
-      std::vector<VarFuncRecord> _varFuncRecords;
+      std::vector<VarRecord> _varRecords;
     
   };
 }
