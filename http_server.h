@@ -26,6 +26,11 @@
 #ifndef HTTP_SERVER_MAX_CONCURRENT
 #define HTTP_SERVER_MAX_CONCURRENT      5
 #endif
+// not needed except by mbed-simulator
+#ifndef HTTP_RECEIVE_BUFFER_SIZE
+#define HTTP_RECEIVE_BUFFER_SIZE 8 * 1024
+#endif
+
 
 typedef HttpResponse ParsedHttpRequest;
 
@@ -44,11 +49,6 @@ public:
     }
 
     ~HttpServer() {
-        for (size_t ix = 0; ix < HTTP_SERVER_MAX_CONCURRENT; ix++) {
-            if (socket_threads[ix]) {
-                delete socket_threads[ix];
-            }
-        }
     }
 
     /**
@@ -73,16 +73,14 @@ public:
 
         handler = a_handler;
 
-        main_thread.start(callback(this, &HttpServer::main));
+        main();
 
         return NSAPI_ERROR_OK;
     }
 
 private:
 
-    void receive_data() {
-        // UNSAFE: should Mutex around it or something
-        TCPSocket* socket = sockets.back();
+    void receive_data(TCPSocket* socket) {
 
         // needs to keep running until the socket gets closed
         while (1) {
@@ -99,7 +97,7 @@ private:
                 // Pass the chunk into the http_parser
                 size_t nparsed = parser->execute((const char*)recv_buffer, (uint32_t) recv_ret);
                 if (nparsed != (uint32_t) recv_ret) {
-                    printf("Parsing failed... parsed %d bytes, received %d bytes\n", nparsed, recv_ret);
+                    printf("Parsing failed... parsed %u bytes, received %d bytes\n", nparsed, recv_ret);
                     recv_ret = -2101;
                     break;
                 }
@@ -151,43 +149,17 @@ private:
             nsapi_error_t accept_status = 0;
             TCPSocket* clt_sock = server->accept(&accept_status);
             if (accept_status == NSAPI_ERROR_OK) {
-                sockets.push_back(clt_sock); // so we can clear our disconnected sockets
-
-                // and start listening for events there
-                Thread* t = new Thread(osPriorityNormal, 2048);
-                t->start(callback(this, &HttpServer::receive_data));
-
-                socket_thread_metadata_t* m = new socket_thread_metadata_t();
-                m->socket = clt_sock;
-                m->thread = t;
-                socket_threads.push_back(m);
+                receive_data(clt_sock);
+                delete clt_sock;
             }
             else {
                 delete clt_sock;
             }
-
-            for (size_t ix = 0; ix < socket_threads.size(); ix++) {
-                if (socket_threads[ix]->thread->get_state() == Thread::Deleted) {
-                    socket_threads[ix]->thread->terminate();
-                    delete socket_threads[ix]->thread;
-                    delete socket_threads[ix]->socket; // does this work on esp8266?
-                    socket_threads.erase(socket_threads.begin() + ix); // what if there are two?
-                }
-            }
-
         }
     }
 
-    typedef struct {
-        TCPSocket* socket;
-        Thread*    thread;
-    } socket_thread_metadata_t;
-
     TCPSocket* server;
     NetworkInterface* _network;
-    Thread main_thread;
-    vector<TCPSocket*> sockets;
-    vector<socket_thread_metadata_t*> socket_threads;
     Callback<void(ParsedHttpRequest* request, TCPSocket* socket)> handler;
 };
 

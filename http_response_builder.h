@@ -112,7 +112,7 @@ public:
 
     char* build(const void* body, size_t body_size, size_t* size) {
         char buffer[10];
-        snprintf(buffer, sizeof(buffer), "%d", body_size);
+        snprintf(buffer, sizeof(buffer), "%lu", body_size);
         set_header("Content-Length", string(buffer));
 
         char status_code_buffer[5];
