@@ -72,7 +72,7 @@ namespace ewc
           break;
       }; // switch varType
     }; // toValString
-    int fromValString(char* inStr){
+    int fromValString(const char* inStr){
       bool isNullTerm=false;
       for(size_t i=0; i<16; i++)
       {
@@ -101,6 +101,7 @@ namespace ewc
         default:
           break;
       }; // switch varType
+      return -1;
     }; // toValString
   }; 
 
