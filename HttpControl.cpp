@@ -1,5 +1,148 @@
 #include "HttpControl.h"
 
+const char* ewc::varTypeToStr(const VarType v)
+{
+  using namespace ewc;
+  switch(v)
+  {
+    case Nothing:
+      return "Nothing";
+      break;
+    case DecInteger8:
+      return "int8";
+      break;
+    case DecInteger16:
+      return "int16";
+      break;
+    case DecInteger32:
+      return "int32";
+      break;
+    case DecUInteger8:
+      return "uint8";
+      break;
+    case DecUInteger16:
+      return "uint16";
+      break;
+    case DecUInteger32:
+      return "uint32";
+      break;
+    case OctUInteger8:
+      return "Oct uint8";
+      break;
+    case OctUInteger16:
+      return "Oct uint16";
+      break;
+    case OctUInteger32:
+      return "Oct uint32";
+      break;
+    case HexUInteger8:
+      return "Hex uint8";
+      break;
+    case HexUInteger16:
+      return "Hex uint16";
+      break;
+    case HexUInteger32:
+      return "Hex uint32";
+      break;
+    case FixFloat32:
+      return "Fix float32";
+      break;
+    case FixFloat64:
+      return "Fix float64";
+      break;
+    case ExpFloat32:
+      return "Exp float32";
+      break;
+    case ExpFloat64:
+      return "Exp float64";
+      break;
+    case Boolean:
+      return "bool";
+      break;
+    case Character:
+      return "char";
+      break;
+    case StringNullTerm:
+      return "string";
+      break;
+  } //switch v
+} //varTypeToStr
+
+void ewc::VarFuncRecord::formatVal(char * buffer, size_t bufferSize) const
+{
+  using namespace ewc;
+  switch(v)
+  {
+    case Nothing:
+      *buffer = "\0";
+      break;
+    case DecInteger8:
+      if(isFunction) snprintf(buffer,bufferSize,"%i",(int8_t) (*address()));
+      else snprintf(buffer,bufferSize,"%i",(int8_t) (*address));
+      break;
+    case DecInteger16:
+      if(isFunction) snprintf(buffer,bufferSize,"%i",(int16_t) (*address));
+      else snprintf();
+      break;
+    case DecInteger32:
+      if(isFunction) snprintf(buffer,bufferSize,"%i",(int32_t) (*address));
+      else snprintf();
+      break;
+    case DecUInteger8:
+      if(isFunction) snprintf(buffer,bufferSize,"%u",(uint8_t) (*address));
+      else snprintf();
+      break;
+    case DecUInteger16:
+      if(isFunction) snprintf(buffer,bufferSize,"%u",(uint16_t) (*address));
+      else snprintf();
+      break;
+    case DecUInteger32:
+      if(isFunction) snprintf(buffer,bufferSize,"%u",(uint32_t) (*address));
+      else snprintf();
+      break;
+    case OctUInteger8:
+      if(isFunction) snprintf(buffer,bufferSize,"%o",(uint8_t) (*address));
+      else snprintf();
+      break;
+    case OctUInteger16:
+      return "Oct int16";
+      break;
+    case OctUInteger32:
+      return "Oct int32";
+      break;
+    case HexUInteger8:
+      return "Hex int8";
+      break;
+    case HexUInteger16:
+      return "Hex int16";
+      break;
+    case HexUInteger32:
+      return "Hex int32";
+      break;
+    case FixFloat32:
+      return "Fix float32";
+      break;
+    case FixFloat64:
+      return "Fix float64";
+      break;
+    case ExpFloat32:
+      return "Exp float32";
+      break;
+    case ExpFloat64:
+      return "Exp float64";
+      break;
+    case Boolean:
+      return "bool";
+      break;
+    case Character:
+      return "char";
+      break;
+    case StringNullTerm:
+      return "string";
+      break;
+  } //switch v
+} // VarFuncRecord::formatVal
+
 ewc::HttpControl::HttpControl(NetworkInterface* network):
     _httpServer(new HttpServer(network))
 {
@@ -48,16 +191,43 @@ void ewc::HttpControl::indexHtml(ParsedHttpRequest* request, TCPSocket* socket)
       HttpResponseBuilder builder(200);
       builder.set_header("Content-Type", "text/html; charset=utf-8");
 
-      char response[] = "<html><head><title>Hello from mbed</title></head>"
-          "<body>"
-              "<h1>mbed webserver</h1>"
-              "<button id=\"toggle\">Toggle LED</button>"
-              "<script>document.querySelector('#toggle').onclick = function() {"
-                  "var x = new XMLHttpRequest(); x.open('POST', '/toggle'); x.send();"
-              "}</script>"
-          "</body></html>";
-
-      builder.send(socket, response, sizeof(response) - 1);
+      std::string title = "Hello World";
+      std::string page = "<!DOCTYPE html>\r\n<html><head><title>";
+      page += title;
+      page += "</title></head>\r\n";
+      page += "<body><h1>";
+      page += title;
+      page += "</h1>\r\n";
+      page += "<table id=\"varfunctable\"><tr><th>Name</th><th>MemoryAddress</th><th>Type</th><th>IsFunction</th><th>Value</th><th>Description</th></tr>\r\n";
+      const size_t& nRecs = _varFuncRecords.size();
+      for(size_t iRec=0; iRec < nRecs; iRec++)
+      {
+        const VarFuncRecord& rec = _varFuncRecords[iRec];
+        if(rec.addToStatusList)
+        {
+          page += "<td>";
+          page += rec.name;
+          page += "</td><td>";
+          page += (uint32_t) rec.address;
+          page += "</td><td>";
+          page += varTypeToStr(rec.varType);
+          page += "</td><td>";
+          page += rec.isFunction;
+          page += "</td><td>";
+          if(rec.isFunction)
+          {
+          } // if isFunction
+          else // is var
+          {
+          } // else is var
+          page += "</td><td>";
+          page += rec.description;
+          page += "</td>\r\n";
+        } // if addToStatsList
+      } // for iRec
+      page += "\r\n</table>";
+      page += "\r\n</body></html>";
+      builder.send(socket, page.c_str(), page.size());
     } // if method == GET
     else
     {

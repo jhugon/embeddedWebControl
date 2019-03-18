@@ -17,12 +17,15 @@ namespace ewc
       DecInteger8,
       DecInteger16,
       DecInteger32,
-      OctInteger8,
-      OctInteger16,
-      OctInteger32,
-      HexInteger8,
-      HexInteger16,
-      HexInteger32,
+      DecUInteger8,
+      DecUInteger16,
+      DecUInteger32,
+      OctUInteger8,
+      OctUInteger16,
+      OctUInteger32,
+      HexUInteger8,
+      HexUInteger16,
+      HexUInteger32,
       FixFloat32,
       FixFloat64,
       ExpFloat32,
@@ -33,6 +36,7 @@ namespace ewc
   };
 
   struct VarRecord
+  const char* varTypeToStr(const VarType v);
   {
     char name[VARNAMESIZE];
     void* address;
@@ -103,6 +107,7 @@ namespace ewc
       }; // switch varType
       return -1;
     }; // toValString
+    const char* getAndFormatVal() const;
   }; 
 
   /** \brief Web server class for embedded web control
