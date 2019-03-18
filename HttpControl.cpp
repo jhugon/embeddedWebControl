@@ -29,7 +29,7 @@ void ewc::HttpControl::handle(ParsedHttpRequest* request, TCPSocket* socket)
     {
       indexHtml(request,socket);
     } // if url == /
-    else if (url.compare(0,5,"/var/"))
+    else if (url.compare(0,5,"/var/") == 0)
     {
       varInterface(request,socket);
     } // if url starts with /var/
