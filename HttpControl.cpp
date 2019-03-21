@@ -34,6 +34,7 @@ void ewc::HttpControl::handle(ParsedHttpRequest* request, TCPSocket* socket)
       varInterface(request,socket);
     } // if url starts with /var/
     else {
+        debug("ewc::HttpControl::handle URL not found, returning empty 404\n");
         HttpResponseBuilder builder(404); // not found
         builder.send(socket, NULL, 0);
     }
@@ -61,6 +62,7 @@ void ewc::HttpControl::indexHtml(ParsedHttpRequest* request, TCPSocket* socket)
     } // if method == GET
     else
     {
+      debug("ewc::HttpControl::indexHtml method other than GET called, return empty 405\n");
       HttpResponseBuilder builder(405); // method not allowed
       builder.send(socket, NULL, 0);
     } // else method isn't GET
@@ -71,11 +73,14 @@ void ewc::HttpControl::varInterface(ParsedHttpRequest* request, TCPSocket* socke
     const std::string& url = request->get_url();
     debug("ewc::HttpControl::varInterface called with url: %s\n",url.c_str());
     const std::string& varName = url.substr(5,VARNAMESIZE);
+    debug("ewc::HttpControl::varInterface var name: \"%s\"\n",varName.c_str());
     for(size_t iRec=0; iRec < _varRecords.size(); iRec++)
     {
-      if (_varRecords[iRec].name == varName)
+      std::string thisVarName = _varRecords[iRec].name;
+      //debug("ewc::HttpControl::varInterface thisVarName: %s\n",thisVarName.c_str());
+      if (thisVarName == varName)
       {
-        debug("ewc::HttpControl::varInterface found record: %s\n",_varRecords[iRec].name);
+        debug("ewc::HttpControl::varInterface found record: %s\n",thisVarName.c_str());
         const http_method & method = request->get_method();
         if (method == HTTP_GET)
         {
@@ -100,6 +105,7 @@ void ewc::HttpControl::varInterface(ParsedHttpRequest* request, TCPSocket* socke
           HttpResponseBuilder builder(200);
           builder.set_header("Content-Type", "text/plain");
           builder.send(socket, outVal, outValLen);
+          return;
         }
         else if (method == HTTP_POST)
         {
@@ -110,23 +116,27 @@ void ewc::HttpControl::varInterface(ParsedHttpRequest* request, TCPSocket* socke
             debug("ewc::HttpControl::varInterface HTTP_POST success, data: \"%s\"\n",message.c_str());
             HttpResponseBuilder builder(200);
             builder.send(socket, NULL, 0);
+            return;
           }
           else
           {
             debug("ewc::HttpControl::varInterface HTTP_POST error parsing data: \"%s\", status code %d\n",message.c_str(),status);
             HttpResponseBuilder builder(500);
             builder.send(socket, NULL, 0);
+            return;
           }
-          HttpResponseBuilder builder(405); // method not allowed
-          builder.send(socket, NULL, 0);
         }
         else
         {
           debug("ewc::HttpControl::varInterface invalid HTTP_METHOD\n");
           HttpResponseBuilder builder(405); // method not allowed
           builder.send(socket, NULL, 0);
+          return;
         }
-        break;
       } // if name == varName
     } // for iRec
+    // Didn't find a record with the right name, so return 404 error
+    debug("ewc::HttpControl::varInterface var not found, returning empty 404\n");
+    HttpResponseBuilder builder(404); // not found
+    builder.send(socket, NULL, 0);
 } // varInterface

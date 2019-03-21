@@ -3,10 +3,12 @@
 #include "EthernetInterface.h"
 
 Serial pc(USBTX, USBRX);
-DigitalOut led(LED1);
+DigitalOut led1(LED1);
+DigitalOut led2(LED2);
 
 int main() {
-    pc.baud(115200);
+    //pc.baud(115200);
+    pc.printf("Embedd Web Server Starting Up!\n");
 
     // Connect to the network (see mbed_app.json for the connectivity method used)
     //NetworkInterface* network = NetworkInterface::get_default_instance();
@@ -43,7 +45,8 @@ int main() {
     } //switch
 
     ewc::HttpControl server(network);
-    server.addVar("LED1",&led,ewc::DecInteger32,"Output Pin LED1",true);
+    server.addVar("LED1",&led1,ewc::DecInteger32,"Output Pin LED1",true);
+    server.addVar("LED2",&led2,ewc::DecInteger32,"Output Pin LED2",true);
     nsapi_error_t res = server.start(8080);
 
     if (res == NSAPI_ERROR_OK) {

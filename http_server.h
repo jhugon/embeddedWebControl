@@ -118,6 +118,7 @@ private:
                 delete response;
                 delete parser;
                 free(recv_buffer);
+                printf("Just deleted and free'd socket and buffers\n");
 
                 // q; should we always break out of the thread or only if NO_SOCKET ?
                 // should we delete socket here? the socket seems already gone...

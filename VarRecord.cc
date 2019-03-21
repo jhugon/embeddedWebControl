@@ -72,15 +72,27 @@ const char* ewc::varTypeToStr(const VarType v)
 ewc::VarRecord::VarRecord(char* nm, void* addr, VarType t, char* desc, bool atsl)
 {
   size_t nameLen = strlen(nm);
+  debug("ewc::VarRecord nm len: %u\n",nameLen);
   size_t descLen = strlen(desc);
+  debug("ewc::VarRecord desc len: %u\n",descLen);
   for(size_t i=0; i < nameLen && i < VARNAMESIZE; i++)
   {
     name[i] = nm[i];
   }
+  if(nameLen < VARNAMESIZE-1)
+  {
+    name[nameLen] = '\0';
+  }
+  name[VARNAMESIZE-1] = '\0';
   for(size_t i=0; i < descLen && i < DESCRIPTIONSIZE; i++)
   {
     description[i] = desc[i];
   }
+  if(descLen < DESCRIPTIONSIZE-1)
+  {
+    description[descLen] = '\0';
+  }
+  description[DESCRIPTIONSIZE-1] = '\0';
   address = addr;
   varType = t;
   addToStatusList = atsl;
