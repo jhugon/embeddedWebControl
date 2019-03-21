@@ -11,9 +11,9 @@ ewc::HttpControl::~HttpControl()
 } // HttpControl destructor
 
 
-void ewc::HttpControl::addVar(char* name, void* address, VarType varType, char* description, bool addToStatsList)
+void ewc::HttpControl::addVar(char* name, void* address, VarType varType, char* description, bool addToStatsList, FuncRecordFuncType f)
 {
-    _varRecords.push_back(VarRecord(name,address,varType,description,addToStatsList));
+    _varRecords.push_back(VarRecord(name,address,varType,description,addToStatsList,f));
 } // addVar
 
 nsapi_error_t ewc::HttpControl::start(uint16_t port)
@@ -81,7 +81,22 @@ void ewc::HttpControl::varInterface(ParsedHttpRequest* request, TCPSocket* socke
       if (thisVarName == varName)
       {
         debug("ewc::HttpControl::varInterface found record: %s\n",thisVarName.c_str());
+        debug("ewc::HttpControl::varInterface function address: %p\n",(void*) _varRecords[iRec].function);
         const http_method & method = request->get_method();
+        if (_varRecords[iRec].function)
+        {
+          debug("ewc::HttpControl::varInterface record is function, calling");
+          const std::string& message = request->get_body_as_string();
+          char* outVal=NULL;
+          size_t outValLen=0;
+          int http_status=0;
+          _varRecords[iRec].function(message.c_str(),message.size(),method,outVal,outValLen,http_status);
+          HttpResponseBuilder builder(http_status);
+          //builder.set_header("Content-Type", "text/plain");
+          builder.set_header("Content-Type", "text/html");
+          builder.send(socket, outVal, outValLen);
+          return;
+        }  // else function is good pointer
         if (method == HTTP_GET)
         {
           char outVal[16];
@@ -106,7 +121,7 @@ void ewc::HttpControl::varInterface(ParsedHttpRequest* request, TCPSocket* socke
           builder.set_header("Content-Type", "text/plain");
           builder.send(socket, outVal, outValLen);
           return;
-        }
+        } // if method == GET
         else if (method == HTTP_POST)
         {
           const std::string& message = request->get_body_as_string();
@@ -125,14 +140,14 @@ void ewc::HttpControl::varInterface(ParsedHttpRequest* request, TCPSocket* socke
             builder.send(socket, NULL, 0);
             return;
           }
-        }
-        else
+        } // if method == POST
+        else // method not GET/POST
         {
           debug("ewc::HttpControl::varInterface invalid HTTP_METHOD\n");
           HttpResponseBuilder builder(405); // method not allowed
           builder.send(socket, NULL, 0);
           return;
-        }
+        } // else method not GET/POST
       } // if name == varName
     } // for iRec
     // Didn't find a record with the right name, so return 404 error

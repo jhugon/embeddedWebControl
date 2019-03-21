@@ -69,7 +69,7 @@ const char* ewc::varTypeToStr(const VarType v)
   return "";
 } //varTypeToStr
 
-ewc::VarRecord::VarRecord(char* nm, void* addr, VarType t, char* desc, bool atsl)
+ewc::VarRecord::VarRecord(char* nm, void* addr, VarType t, char* desc, bool atsl, FuncRecordFuncType f)
 {
   size_t nameLen = strlen(nm);
   debug("ewc::VarRecord nm len: %u\n",nameLen);
@@ -96,10 +96,16 @@ ewc::VarRecord::VarRecord(char* nm, void* addr, VarType t, char* desc, bool atsl
   address = addr;
   varType = t;
   addToStatusList = atsl;
+  function = f;
 } // VarRecord constructor
 
 void ewc::VarRecord::toValString(char* outStr, size_t strLen)
 {
+  if (address == NULL)
+  {
+    debug("ewc::VarRecord::toValString: address is 0");
+    return;
+  }
   switch(varType)
   {
     case DecInteger8:
@@ -145,6 +151,11 @@ void ewc::VarRecord::toValString(char* outStr, size_t strLen)
 
 int ewc::VarRecord::fromValString(const char* inStr)
 {
+  if (address == NULL)
+  {
+    debug("ewc::VarRecord::fromValString: address is 0");
+    return -1;
+  }
   bool isNullTerm=false;
   for(size_t i=0; i<16; i++)
   {

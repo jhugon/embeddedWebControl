@@ -1,6 +1,9 @@
 /** \brief Web server class for embedded web control
  */
 
+#ifndef HTTP_CONTROL_H
+#define HTTP_CONTROL_H
+
 #include "mbed.h"
 #include "http_server.h"
 #include "http_response_builder.h"
@@ -30,7 +33,7 @@ namespace ewc
        *
        *  Is it useful that I bounds check and put strings in fixed length char arrays?
        */
-      void addVar(char* name, void* address, VarType varType, char* description, bool addToStatsList);
+      void addVar(char* name, void* address, VarType varType, char* description, bool addToStatsList, FuncRecordFuncType f=NULL);
 
       /** \brief Start the server
        *
@@ -71,3 +74,4 @@ namespace ewc
     
   };
 }
+#endif
