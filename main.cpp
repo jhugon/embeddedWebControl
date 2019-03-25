@@ -1,10 +1,35 @@
 #include "mbed.h"
 #include "HttpControl.h"
 #include "EthernetInterface.h"
+#include "FuncRecord.h"
 
 Serial pc(USBTX, USBRX);
 DigitalOut led1(LED1);
 DigitalOut led2(LED2);
+
+class FuncToggleDigitalOut: ewc::FuncRecord
+{
+  private:
+    DigitalOut _d;
+  public:
+    FuncToggleDigitalOut(char* nm, char* desc, bool atsl, PinName pin): 
+        ewc::FuncRecord(nm,desc,atsl), _d(pin)
+    {
+      _d.write(0);
+    }; // constructor
+    void operator()(ParsedHttpRequest* request, TCPSocket* socket)
+    {
+      debug("FuncToggleDigitalOut::operator() called\n");
+      debug("DigitalOut past value: %d\n",_d.read());
+      int val = _d.read();
+      if(val == 0) val = 1;
+      else val = 0;
+      _d.write(val);
+      debug("DigitalOut future value: %d\n",_d.read());
+      HttpResponseBuilder builder(200); // not found
+      builder.send(socket, NULL, 0);
+    };
+}; // FuncToggleDigitalOut
 
 int main() {
     //pc.baud(115200);
@@ -47,6 +72,10 @@ int main() {
     ewc::HttpControl server(network);
     server.addVar("LED1",&led1,ewc::DecInteger32,"Output Pin LED1",true);
     server.addVar("LED2",&led2,ewc::DecInteger32,"Output Pin LED2",true);
+    server.addFunc(new ewc::FuncRecord("dummy","dummy",true));
+    server.addFunc((ewc::FuncRecord*) new FuncToggleDigitalOut("led1","Output Pin LED1",true,LED1));
+    server.addFunc((ewc::FuncRecord*) new FuncToggleDigitalOut("led2","Output Pin LED2",true,LED2));
+    server.addFunc((ewc::FuncRecord*) new FuncToggleDigitalOut("led3","Output Pin LED3",true,LED3));
     nsapi_error_t res = server.start(8080);
 
     if (res == NSAPI_ERROR_OK) {

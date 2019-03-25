@@ -1,5 +1,7 @@
 /** \brief Variable Record for HttpControl
  */
+#ifndef VAR_RECORD_H
+#define VAR_RECORD_H
 
 #include "mbed.h"
 
@@ -48,3 +50,4 @@ namespace ewc
   }; 
 
 } // namespace ewc
+#endif

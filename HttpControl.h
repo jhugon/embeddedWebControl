@@ -1,10 +1,14 @@
 /** \brief Web server class for embedded web control
  */
 
+#ifndef HTTP_CONTROL_H
+#define HTTP_CONTROL_H
+
 #include "mbed.h"
 #include "http_server.h"
 #include "http_response_builder.h"
 #include "VarRecord.h"
+#include "FuncRecord.h"
 #include <vector>
 
 namespace ewc
@@ -32,6 +36,13 @@ namespace ewc
        */
       void addVar(char* name, void* address, VarType varType, char* description, bool addToStatsList);
 
+      /** \brief Make a function object available to the web server
+       *
+       *  Maybe an array of these should be passed to the constructor, 
+       *  then it is statically constructed?
+       *
+       */
+      void addFunc(FuncRecord* funcRecord);
       /** \brief Start the server
        *
        *  Start the server and connect it to its own port
@@ -63,11 +74,20 @@ namespace ewc
        */
       void varInterface(ParsedHttpRequest* request, TCPSocket* socket);
 
+      /** \brief Handle requests for function objects
+       *
+       *  This is the REST API for variables that is used if
+       *  the URL starts with "/fun/"
+       */
+      void funcInterface(ParsedHttpRequest* request, TCPSocket* socket);
+
       /////////////////////////////////
 
       HttpServer* _httpServer;
 
       std::vector<VarRecord> _varRecords;
+      std::vector<FuncRecord*> _funcRecords;
     
   };
 }
+#endif

@@ -16,6 +16,11 @@ void ewc::HttpControl::addVar(char* name, void* address, VarType varType, char* 
     _varRecords.push_back(VarRecord(name,address,varType,description,addToStatsList));
 } // addVar
 
+void ewc::HttpControl::addFunc(FuncRecord* funcRecord)
+{
+   _funcRecords.push_back(funcRecord);
+} // addFunc
+
 nsapi_error_t ewc::HttpControl::start(uint16_t port)
 {
   return _httpServer->start(port,callback(this,&ewc::HttpControl::handle));
@@ -33,6 +38,10 @@ void ewc::HttpControl::handle(ParsedHttpRequest* request, TCPSocket* socket)
     {
       varInterface(request,socket);
     } // if url starts with /var/
+    else if (url.compare(0,5,"/fun/") == 0)
+    {
+      funcInterface(request,socket);
+    } // if url starts with /fun/
     else {
         debug("ewc::HttpControl::handle URL not found, returning empty 404\n");
         HttpResponseBuilder builder(404); // not found
@@ -140,3 +149,19 @@ void ewc::HttpControl::varInterface(ParsedHttpRequest* request, TCPSocket* socke
     HttpResponseBuilder builder(404); // not found
     builder.send(socket, NULL, 0);
 } // varInterface
+
+void ewc::HttpControl::funcInterface(ParsedHttpRequest* request, TCPSocket* socket)
+{
+  debug("ewc::HttpControl::funcInterface called\n");
+  for(size_t iRec=0; iRec < _funcRecords.size(); iRec++)
+  {
+    if (_funcRecords[iRec]->isMyName(request))
+    {
+      (*(_funcRecords[iRec]))(request,socket);
+      return;
+    }
+  }
+  debug("ewc::HttpControl::funcInterface function not found, returning empty 404\n");
+  HttpResponseBuilder builder(404); // not found
+  builder.send(socket, NULL, 0);
+} // funcInterface
