@@ -58,16 +58,114 @@ void ewc::HttpControl::indexHtml(ParsedHttpRequest* request, TCPSocket* socket)
       HttpResponseBuilder builder(200);
       builder.set_header("Content-Type", "text/html; charset=utf-8");
 
-      char response[] = "<html><head><title>Hello from mbed</title></head>"
-          "<body>"
-              "<h1>mbed webserver</h1>"
-              "<button id=\"toggle\">Toggle LED</button>"
-              "<script>document.querySelector('#toggle').onclick = function() {"
-                  "var x = new XMLHttpRequest(); x.open('POST', '/toggle'); x.send();"
-              "}</script>"
-          "</body></html>";
-
-      builder.send(socket, response, sizeof(response) - 1);
+      static const std::string responseStart =
+"<!DOCTYPE html>"
+"<html><head><title>Mbed Webserver</title>"
+"<link rel=\"stylesheet\" href=\"https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css\" integrity=\"sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T\" crossorigin=\"anonymous\">"
+"</head>"
+"<body>"
+"<h1>Mbed Webserver</h1>"
+"<h2>Variable Table</h2>"
+"<table id=\"vartable\" class=\"table\">"
+"<tr>"
+"<th>Name</th>"
+"<th>Memory Address</th>"
+"<th>Type</th>"
+"<th>Value</th>"
+"<th>Description</th>"
+"</tr>"
+"<tr>"
+"<td>Name</td>"
+"<td>Memory Address</td>"
+"<td>Type</td>"
+"<td>Value</td>"
+"<td>Description</td>"
+"</tr>"
+"</table>"
+"<h2>Function Table</h2>"
+"<table id=\"funtable\" class=\"table\">"
+"<tr>"
+"<th>Name</th>"
+"<th>Description</th>"
+"<th>Input</th>"
+"<th>Output</th>"
+"</tr>"
+;
+  static const std::string responseEnd =
+"</table>"
+"</body>"
+"<script>"
+"document.querySelector('.funcsend').onclick = function() {\n"
+"console.log(\"Clicked on button!!\")\n"
+"console.log(event)\n"
+"console.log(event.target)\n"
+"var whichbutton = event.target\n"
+"var inputElem = whichbutton.parentNode.querySelector(\"input\");\n"
+"var message = inputElem.value;\n"
+"var row = whichbutton.parentNode.parentNode;\n"
+"var outputElem = row.querySelector('.funcoutput')\n"
+"var funcname = row.querySelector('.funcname').innerHTML\n"
+"console.log(row)\n"
+"console.log(outputElem)\n"
+"console.log(\"funcname:\")\n"
+"console.log(funcname)\n"
+"console.log(\"message:\")\n"
+"console.log(message)\n"
+"var req = new XMLHttpRequest()\n"
+"req.open('POST', '/fun/'+funcname)\n"
+"req.onreadystatechange = function() {\n"
+"if(this.readyState == 4) {\n"
+"if(this.status == 200) {\n"
+"outputElem.className = \"\";\n"
+"outputElem.innerHTML = req.responseText;\n"
+"}\n"
+"else {\n"
+"outputElem.className = \"table-danger\";\n"
+"outputElem.innerHTML = \"HTTP Error: \"+this.status;\n"
+"}\n"
+"}\n"
+"}\n"
+"req.timeout = 1000\n"
+"req.ontimeout = function() {\n"
+"outputElem.className = \"table-warning\";\n"
+"outputElem.innerHTML = '<span class=\"error\">HTTP Timeout</span>'\n"
+"}\n"
+"req.send(message)\n"
+"}\n"
+"</script>"
+"</html>"
+;
+      std::string response = responseStart;
+      for(size_t iRec=0; iRec < _funcRecords.size(); iRec++)
+      {
+        if(! (_funcRecords[iRec]->addToStatusList)) continue;
+        std::string row =
+        "<tr>"
+        "<td class=\"funcname\">NAME</td>"
+        "<td>DESCRIPTION</td>"
+        "<td><input></input><button class=\"funcsend btn btn-primary\">Send</button></td>"
+        "<td class=\"funcoutput\"></td>"
+        "</tr>"
+        ;
+        size_t nameLoc = row.find("NAME");
+        if(nameLoc < row.size())
+        {
+          debug("Found NAME at %u\n",nameLoc);
+          row.replace(nameLoc,nameLoc+4,_funcRecords[iRec]->name);
+          debug("Replaced NAME\n");
+        }
+        size_t descLoc = row.find("DESCRIPTION");
+        if( descLoc < row.size())
+        {
+          debug("Found DESCRIPTION at %u\n",descLoc);
+          row.replace(descLoc,descLoc+11,_funcRecords[iRec]->description);
+          debug("Replaced DESC\n");
+        }
+        response += row;
+        debug("Appended row\n");
+      }
+      response += responseEnd;
+      builder.send(socket, response.c_str(), response.size());
     } // if method == GET
     else
     {
